@@ -107,7 +107,8 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
 
                     <Button disabled={table.getFilteredSelectedRowModel().rows.length === 0} onClick={() => {
                         const filtered = dt.filter((item, index) => {
-                            return !rowSelection[index];
+                            // @ts-ignore
+                            return !rowSelection[index] || true;
                         });
 
                         setDt(filtered)
