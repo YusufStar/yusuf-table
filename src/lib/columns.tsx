@@ -20,42 +20,52 @@ export const TestColumns = [
                 onCheckedChange={(value) => row.toggleSelected(!!value)}>
             </Checkbox>;
         },
+        footer: props => props.column.id,
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
     },
     {
         header: ({column}) => <TableSortable column={column}>Id</TableSortable>,
         accessorKey: "id",
+        enableColumnFilter: false,
     },
     {
         header: "Photo",
         accessorKey: "photo",
         cell: TableImage,
+        enableColumnFilter: false,
     },
     {
-        header: "First Name",
-        accessorKey: "first_name"
+        header: ({column}) => <TableSortable column={column}>First Name</TableSortable>,
+        accessorKey: "first_name",
+        enableColumnFilter: false,
     },
     {
-        header: "Last Name",
-        accessorKey: "last_name"
+        header:  ({column}) => <TableSortable column={column}>Last Name</TableSortable>,
+        accessorKey: "last_name",
+        enableColumnFilter: false,
     },
     {
         header: "Email",
-        accessorKey: "email"
+        accessorKey: "email",
+        enableColumnFilter: false,
     },
     {
         header: "Gender",
-        accessorKey: "gender"
+        accessorKey: "gender",
+        enableColumnFilter: true,
     },
     {
         header: "Date of birth",
         accessorKey: "date_of_birth",
-        cell: TableDate
+        cell: TableDate,
+        enableColumnFilter: false,
     },
     {
         header: "Department",
         accessorKey: "department",
+        enableColumnFilter: true,
     },
     {
         id: "actions",

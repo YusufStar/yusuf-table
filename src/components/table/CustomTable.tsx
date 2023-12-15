@@ -1,9 +1,9 @@
 'use client'
 
-import {FC, useEffect, useState} from "react";
+import {FC, useEffect, useMemo, useState} from "react";
 import {
     ColumnDef, ColumnFiltersState,
-    getCoreRowModel,
+    getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues,
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel, PaginationState, SortingState
@@ -27,6 +27,15 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -39,7 +48,8 @@ interface DataTableProps<TData, TValue> {
 
 function CustomTable<TData, TValue>({columns, data, pagination, sortable, filters, maxPerPage = 10}: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters ] = useState<ColumnFiltersState>([])
+    const [globalFilter, setGlobalFilter] = useState<string>("")
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [currentPage, setCurrentPage] = useState<PaginationState>({
         pageSize: maxPerPage,
         pageIndex: 0
@@ -55,42 +65,47 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
+        getFacetedRowModel: getFacetedRowModel(),
+        getFacetedUniqueValues: getFacetedUniqueValues(),
+        getFacetedMinMaxValues: getFacetedMinMaxValues(),
 
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onPaginationChange: setCurrentPage,
         onColumnVisibilityChange: setColumnVisibility,
         onRowSelectionChange: setRowSelection,
+        onGlobalFilterChange: setGlobalFilter,
 
         state: {
             sorting: sortable ? sorting : undefined,
-            columnFilters,
+            columnFilters: columnFilters,
             pagination: currentPage,
             columnVisibility: columnVisibility,
-            rowSelection: rowSelection
+            rowSelection: rowSelection,
+            globalFilter,
         }
     });
 
     return (
-        <div className="" >
+        <div className="">
             {/* Input */}
             {filters && (
                 <div className="flex items-center py-4">
                     <Input
-                        placeholder="Filter First Name"
-                        value={table.getColumn("first_name")?.getFilterValue() as string || ""}
-                        onChange={e => table.getColumn("first_name")?.setFilterValue(e.target.value as string)}
-                        className="max-w-sm outline-none !ring-0"
+                        placeholder="Search all columns"
+                        value={globalFilter ?? ''}
+                        onChange={e => setGlobalFilter(e.target.value as string)}
+                        className="max-w-sm outline-none"
                     />
 
                     <DropdownMenu>
-                        <DropdownMenuTrigger className="!ring-0 ml-4">
-                            <Button variant="outline" className="!ring-0">
+                        <DropdownMenuTrigger className=" ml-4">
+                            <Button variant="outline" className="">
                                 Columns
                             </Button>
                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end" className="!ring-0">
+                        <DropdownMenuContent align="end" className="">
                             {table.getAllColumns().filter(column => column.getCanHide()).map(column => {
                                 return (
                                     <DropdownMenuCheckboxItem onCheckedChange={(value: boolean) => {
@@ -140,16 +155,38 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
             )}
 
             {/* Table */}
-            <div className="rounded-md border">
+            <div className="rounded-md">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => {
                             return (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id}>
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
-                                        </TableHead>
+                                            !header.column.getCanFilter()
+                                                ? <TableHead key={header.id}>
+                                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                                </TableHead>
+                                                : <TableHead key={header.id}>
+                                                    <Select onValueChange={e => {
+                                                        if(e === "all") {
+                                                            return header.column.setFilterValue("")
+                                                        }
+                                                        header.column.setFilterValue(e)
+                                                    }}>
+                                                    <SelectTrigger className="!ring-0 w-36 !ring-transparent">
+                                                        <SelectValue className="!ring-0 !ring-transparent" placeholder={header.column.columnDef.header as string}/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectGroup>
+                                                            <SelectLabel>Filter {header.column.columnDef.header as string}</SelectLabel>
+                                                            <SelectItem value="all">{header.column.columnDef.header}</SelectItem>
+                                                            {Array.from(header.column.getFacetedUniqueValues().keys()).map((value, key) => (
+                                                                <SelectItem value={value}>{value}</SelectItem>
+                                                            ))}
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                                </TableHead>
                                     ))}
                                 </TableRow>
                             )
@@ -209,7 +246,7 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                         disabled={!table.getCanNextPage()}
                 >Next</Button>
             </div>
-            
+
             <div className="flex-1 text-sm text-muted-foreground">
                 {table.getFilteredSelectedRowModel().rows.length} of {' '}
                 {table.getFilteredRowModel().rows.length} row(s) selected
