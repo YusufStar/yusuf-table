@@ -11,6 +11,9 @@ const Page: FC<{}> = () => {
 
         <div className="container py-10 mx-auto">
             <CustomTable
+                secretFields={{
+                    "password": false
+                }}
                 columns={TestColumns}
                 data={data}
                 filters={true}

@@ -6,7 +6,7 @@ import {
     getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues,
     getFilteredRowModel,
     getPaginationRowModel,
-    getSortedRowModel, PaginationState, SortingState
+    getSortedRowModel, PaginationState, SortingState, TableState, Updater
 } from "@tanstack/table-core";
 import {flexRender, useReactTable, VisibilityState} from "@tanstack/react-table";
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
@@ -18,7 +18,6 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import {bool} from "prop-types";
 import ModeToggle from "@/components/ThemeToggle";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -36,6 +35,18 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
+import {
+    Dialog, DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import {toast} from "react-toastify";
+import {ArrowDownIcon} from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -44,9 +55,10 @@ interface DataTableProps<TData, TValue> {
     sortable?: boolean;
     filters?: boolean;
     maxPerPage?: number;
+    secretFields?: VisibilityState;
 }
 
-function CustomTable<TData, TValue>({columns, data, pagination, sortable, filters, maxPerPage = 10}: DataTableProps<TData, TValue>) {
+function CustomTable<TData, TValue>({columns, data, pagination, sortable, filters, maxPerPage = 10, secretFields}: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [globalFilter, setGlobalFilter] = useState<string>("")
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -57,8 +69,12 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [rowSelection, setRowSelection] = useState({})
     const [dt, setDt] = useState(data)
+    const [addModalState, setAddModalState] = useState({})
+    const [openAddModal, setOpenAddModal] = useState<boolean>(false);
 
     const table = useReactTable({
+        onStateChange(updater: Updater<TableState>): void {
+        }, renderFallbackValue: undefined,
         data: dt,
         columns,
         getCoreRowModel: getCoreRowModel(),
@@ -80,17 +96,34 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
             sorting: sortable ? sorting : undefined,
             columnFilters: columnFilters,
             pagination: currentPage,
-            columnVisibility: columnVisibility,
+            columnVisibility: {
+                ...secretFields,
+                ...columnVisibility
+            },
             rowSelection: rowSelection,
             globalFilter,
         }
     });
 
+    useEffect(() => {
+        const result = {};
+
+        columns.forEach((item) => {
+            // @ts-ignore
+            if (item?.accessorKey) {
+                // @ts-ignore
+                result[item?.accessorKey] = "";
+            }
+        });
+
+        setAddModalState(result)
+    }, [table])
+
     return (
         <div className="">
             {/* Input */}
             {filters && (
-                <div className="flex items-center py-4">
+                <div className="flex items-center pb-8">
                     <Input
                         placeholder="Search all columns"
                         value={globalFilter ?? ''}
@@ -102,6 +135,7 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                         <DropdownMenuTrigger className=" ml-4">
                             <Button variant="outline" className="">
                                 Columns
+                                <ArrowDownIcon className="w-3.5 h-3.5 ml-2"/>
                             </Button>
                         </DropdownMenuTrigger>
 
@@ -133,7 +167,7 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                     </Button>
 
                     <AlertDialog>
-                        <AlertDialogTrigger className="ml-4">
+                        <AlertDialogTrigger disabled={dt.length === 0} className="ml-4 disabled:pointer-events-none disabled:opacity-50">
                             <Button variant="outline">
                                 Delete All
                             </Button>
@@ -147,10 +181,70 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => setDt([])}>Continue</AlertDialogAction>
+                                <AlertDialogAction
+                                    onClick={() => {
+                                    setDt([])
+                                    toast.error("Deleted All Row's")
+                                }}>Continue</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
+
+                    <Dialog open={openAddModal} onOpenChange={setOpenAddModal}>
+                        <DialogTrigger asChild className="ml-4">
+                            <Button variant="outline">Add Data</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[600px]">
+                            <form className="outline-none rounded-md" onSubmit={(e) => {
+                                e.preventDefault()
+                                const x = addModalState
+                                // @ts-ignore
+                                setDt(prevState => {
+                                    const res = [...prevState, x]
+                                    toast.success(`New Data Created`)
+                                    return res
+                                })
+                                setOpenAddModal(false)
+                                setAddModalState({})
+                            }}>
+                            <DialogHeader>
+                                <DialogTitle>Add Data</DialogTitle>
+                                <DialogDescription>
+                                    Click add when you're done.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                {columns
+                                    // @ts-ignore
+                                    .filter(x => x?.enableForm)
+                                    .map((column) => (
+                                    <div className="grid grid-cols-4 items-center gap-4" key={column.id}>
+                                            <Label htmlFor="name" className="text-right w-fit capitalize">
+                                                {// @ts-ignore
+                                                    column?.accessorKey?.replaceAll("_", " ") as string}
+                                            </Label>
+                                            <Input
+                                                onChange={(event) => setAddModalState(prevState => ({...prevState, [column?.accessorKey]: event.target.value}))}
+                                                type={column?.type}
+                                                required
+                                                id={column?.accessorKey as string}
+                                                placeholder={column?.accessorKey?.replaceAll("_", " ") as string}
+                                                className="col-span-3"
+                                            />
+                                    </div>
+                                ))}
+                            </div>
+                            <DialogFooter>
+                                <DialogClose className="mr-4">
+                                    <Button variant="secondary" type="reset">
+                                        Close
+                                    </Button>
+                                </DialogClose>
+                                <Button type="submit" variant="destructive">Add Data</Button>
+                            </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             )}
 
@@ -163,10 +257,10 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
                                             !header.column.getCanFilter()
-                                                ? <TableHead key={header.id}>
+                                                ? <TableHead className="w-fit" key={header.id}>
                                                     {flexRender(header.column.columnDef.header, header.getContext())}
                                                 </TableHead>
-                                                : <TableHead key={header.id}>
+                                                : <TableHead className="w-fit" key={header.id}>
                                                     <Select onValueChange={e => {
                                                         if(e === "all") {
                                                             return header.column.setFilterValue("")
@@ -179,7 +273,7 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                                                     <SelectContent>
                                                         <SelectGroup>
                                                             <SelectLabel>Filter {header.column.columnDef.header as string}</SelectLabel>
-                                                            <SelectItem value="all">{header.column.columnDef.header}</SelectItem>
+                                                            <SelectItem value="all">All</SelectItem>
                                                             {Array.from(header.column.getFacetedUniqueValues().keys()).map((value, key) => (
                                                                 <SelectItem value={value}>{value}</SelectItem>
                                                             ))}

@@ -6,7 +6,7 @@ import {ArrowUpDownIcon} from "lucide-react";
 
 const TableSortable: FC<{ column: any, children: any }> = ({column, children}) => {
     return (
-        <Button className="!outline-none !ring-0 !ring-transparent !text-muted-foreground" variant="ghost" onClick={() => {
+        <Button className="!outline-none !ring-0 !p-0 !ring-transparent !text-muted-foreground" variant="link" onClick={() => {
             column.toggleSorting(column.getIsSorted() === "asc")
         }}>
             {children}

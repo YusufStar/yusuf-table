@@ -1,4 +1,4 @@
-'use client'
+    'use client'
 import TableSortable from "@/components/table/TableSortable";
 import TableImage from "@/components/table/TableImage";
 import TableDate from "@/components/table/TableDate";
@@ -20,7 +20,6 @@ export const TestColumns = [
                 onCheckedChange={(value) => row.toggleSelected(!!value)}>
             </Checkbox>;
         },
-        footer: props => props.column.id,
         enableSorting: false,
         enableHiding: false,
         enableColumnFilter: false,
@@ -40,32 +39,53 @@ export const TestColumns = [
         header: ({column}) => <TableSortable column={column}>First Name</TableSortable>,
         accessorKey: "first_name",
         enableColumnFilter: false,
+        enableForm: true,
+        type: "text"
     },
     {
         header:  ({column}) => <TableSortable column={column}>Last Name</TableSortable>,
         accessorKey: "last_name",
         enableColumnFilter: false,
+        enableForm: true,
+        type: "text"
     },
     {
         header: "Email",
         accessorKey: "email",
         enableColumnFilter: false,
+        enableForm: true,
+        type: "email",
     },
     {
         header: "Gender",
         accessorKey: "gender",
         enableColumnFilter: true,
+        enableForm: true,
+        type: "text"
     },
     {
         header: "Date of birth",
         accessorKey: "date_of_birth",
         cell: TableDate,
         enableColumnFilter: false,
+        enableForm: true,
+        type: "date"
     },
     {
         header: "Department",
         accessorKey: "department",
         enableColumnFilter: true,
+        enableForm: true,
+        type: "text",
+    },
+    {
+        header: "Password",
+        accessorKey: "password",
+        enableColumnFilter: false,
+        enableHiding: false,
+        enableSorting: false,
+        enableForm: true,
+        type: "password"
     },
     {
         id: "actions",
