@@ -1,6 +1,6 @@
 'use client'
 
-import {FC, useEffect, useMemo, useState} from "react";
+import {useEffect, useState} from "react";
 import {
     ColumnDef, ColumnFiltersState,
     getCoreRowModel, getFacetedMinMaxValues, getFacetedRowModel, getFacetedUniqueValues,
@@ -116,7 +116,11 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
             }
         });
 
-        setAddModalState(result)
+        console.log(result)
+
+        setAddModalState({
+            ...result
+        })
     }, [table])
 
     return (
@@ -200,7 +204,10 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                                 const x = addModalState
                                 // @ts-ignore
                                 setDt(prevState => {
-                                    const res = [...prevState, x]
+                                    const res = [...prevState, {
+                                        ...x,
+                                        id: prevState.length
+                                    }]
                                     toast.success(`New Data Created`)
                                     return res
                                 })

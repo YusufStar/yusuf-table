@@ -1,3 +1,4 @@
+'use client'
 import {ToastContainer} from "react-toastify";
 import * as React from "react";
 import {useTheme} from "next-themes";

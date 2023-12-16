@@ -1,6 +1,6 @@
-    'use client'
+'use client';
+
 import TableSortable from "@/components/table/TableSortable";
-import TableImage from "@/components/table/TableImage";
 import TableDate from "@/components/table/TableDate";
 import TableActions from "@/components/table/TableActions";
 import {Checkbox} from "@/components/ui/checkbox";
@@ -30,12 +30,6 @@ export const TestColumns = [
         enableColumnFilter: false,
     },
     {
-        header: "Photo",
-        accessorKey: "photo",
-        cell: TableImage,
-        enableColumnFilter: false,
-    },
-    {
         header: ({column}) => <TableSortable column={column}>First Name</TableSortable>,
         accessorKey: "first_name",
         enableColumnFilter: false,
@@ -43,7 +37,7 @@ export const TestColumns = [
         type: "text"
     },
     {
-        header:  ({column}) => <TableSortable column={column}>Last Name</TableSortable>,
+        header: ({column}) => <TableSortable column={column}>Last Name</TableSortable>,
         accessorKey: "last_name",
         enableColumnFilter: false,
         enableForm: true,
@@ -91,4 +85,4 @@ export const TestColumns = [
         id: "actions",
         cell: TableActions
     }
-]
+];

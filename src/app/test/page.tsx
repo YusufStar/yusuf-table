@@ -17,7 +17,7 @@ const Page: FC<{}> = () => {
                 columns={TestColumns}
                 data={data}
                 filters={true}
-                maxPerPage={7}
+                maxPerPage={5}
                 pagination={true}
                 sortable={true}
             />
