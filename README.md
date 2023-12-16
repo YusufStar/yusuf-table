@@ -12,3 +12,6 @@ step 2: npx shadcn-ui@latest init
       Configure the import alias for components: › @/components
       Configure the import alias for utils: › @/lib/utils
       Are you using React Server Components? › yes
+
+
+npm i @tanstack/react-table next-themes react-toastify
