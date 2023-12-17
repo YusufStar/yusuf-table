@@ -1,6 +1,6 @@
 'use client';
 
-import {FC} from "react";
+import {FC, useEffect, useState} from "react";
 import CustomTable from "@/components/table/CustomTable";
 import {data} from "@/data";
 import {TestColumns} from "@/lib/columns";
