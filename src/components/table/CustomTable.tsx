@@ -44,7 +44,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import {Label} from "@/components/ui/label"
 import {toast} from "react-toastify";
 import {ArrowDownIcon} from "lucide-react";
 
@@ -159,9 +159,9 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                     <ModeToggle className="ml-4"/>
 
                     <Button disabled={table.getFilteredSelectedRowModel().rows.length === 0} onClick={() => {
-                        const filtered = dt.filter((item, index) => {
+                        const filtered = dt.filter((_, index) => {
                             // @ts-ignore
-                            return !rowSelection[index] || true;
+                            return !rowSelection[index];
                         });
 
                         setDt(filtered)
@@ -171,7 +171,8 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                     </Button>
 
                     <AlertDialog>
-                        <AlertDialogTrigger disabled={dt.length === 0} className="ml-4 disabled:pointer-events-none disabled:opacity-50">
+                        <AlertDialogTrigger disabled={dt.length === 0}
+                                            className="ml-4 disabled:pointer-events-none disabled:opacity-50">
                             <Button variant="outline">
                                 Delete All
                             </Button>
@@ -187,9 +188,16 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                     onClick={() => {
-                                    setDt([])
-                                    toast.error("Deleted All Row's")
-                                }}>Continue</AlertDialogAction>
+                                        const ids = table.getFilteredRowModel().rowsById
+                                        const filtered = dt.filter((_, index) => {
+                                            // @ts-ignore
+                                            return !ids[index];
+                                        });
+
+                                        setDt(filtered)
+
+                                        toast.warning("Deleted All Data")
+                                    }}>Continue</AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -214,44 +222,47 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                                 setOpenAddModal(false)
                                 setAddModalState({})
                             }}>
-                            <DialogHeader>
-                                <DialogTitle>Add Data</DialogTitle>
-                                <DialogDescription>
-                                    Click add when you're done.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                {columns
-                                    // @ts-ignore
-                                    .filter(x => x?.enableForm)
-                                    .map((column) => (
-                                    <div className="grid grid-cols-4 items-center gap-4" key={column.id}>
-                                            <Label htmlFor="name" className="text-right w-fit capitalize">
-                                                {// @ts-ignore
-                                                    column?.accessorKey?.replaceAll("_", " ") as string}
-                                            </Label>
-                                            <Input
-                                                onChange={(event) => setAddModalState(prevState => ({...prevState, [column?.accessorKey]: event.target.value}))}
-                                                type={column?.type}
-                                                required
-                                                id={column?.accessorKey as string}
-                                                placeholder={column?.accessorKey?.replaceAll("_", " ") as string}
-                                                className="col-span-3"
-                                            />
-                                    </div>
-                                ))}
-                            </div>
-                            <DialogFooter>
-                                <DialogClose className="mr-4">
-                                    <Button variant="secondary" type="reset">
-                                        Close
-                                    </Button>
-                                </DialogClose>
-                                <Button type="submit" variant="destructive">Add Data</Button>
-                            </DialogFooter>
+                                <DialogHeader>
+                                    <DialogTitle>Add Data</DialogTitle>
+                                    <DialogDescription>
+                                        Click add when you're done.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="grid gap-4 py-4">
+                                    {columns
+                                        // @ts-ignore
+                                        .filter(x => x?.enableForm)
+                                        .map((column) => (
+                                            <div className="grid grid-cols-4 items-center gap-4" key={column.id}>
+                                                <Label htmlFor="name" className="text-right w-fit capitalize">
+                                                    {// @ts-ignore
+                                                        column?.accessorKey?.replaceAll("_", " ") as string}
+                                                </Label>
+                                                <Input
+                                                    onChange={(event) => setAddModalState(prevState => ({...prevState, [column?.accessorKey]: event.target.value}))}
+                                                    type={column?.type}
+                                                    required
+                                                    id={column?.accessorKey as string}
+                                                    placeholder={column?.accessorKey?.replaceAll("_", " ") as string}
+                                                    className="col-span-3"
+                                                />
+                                            </div>
+                                        ))}
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose className="mr-4">
+                                        <Button variant="secondary" type="reset">
+                                            Close
+                                        </Button>
+                                    </DialogClose>
+                                    <Button type="submit" variant="destructive">Add Data</Button>
+                                </DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
+
+                    {columnFilters.length > 0 ? <Button onClick={() => setColumnFilters([])} variant="destructive" className="ml-4">Clear Filters</Button> : null}
                 </div>
             )}
 
@@ -263,31 +274,32 @@ function CustomTable<TData, TValue>({columns, data, pagination, sortable, filter
                             return (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
-                                            !header.column.getCanFilter()
-                                                ? <TableHead className="w-fit" key={header.id}>
-                                                    {flexRender(header.column.columnDef.header, header.getContext())}
-                                                </TableHead>
-                                                : <TableHead className="w-fit" key={header.id}>
-                                                    <Select onValueChange={e => {
-                                                        if(e === "all") {
-                                                            return header.column.setFilterValue("")
-                                                        }
-                                                        header.column.setFilterValue(e)
-                                                    }}>
+                                        !header.column.getCanFilter()
+                                            ? <TableHead className="w-fit" key={header.id}>
+                                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                            </TableHead>
+                                            : <TableHead className="w-fit" key={header.id}>
+                                                <Select value={header.column.getFilterValue()} onValueChange={e => {
+                                                    if (e === "all") {
+                                                        return header.column.setFilterValue("")
+                                                    }
+                                                    header.column.setFilterValue(e)
+                                                }}>
                                                     <SelectTrigger className="!ring-0 w-36 !ring-transparent">
-                                                        <SelectValue className="!ring-0 !ring-transparent" placeholder={header.column.columnDef.header as string}/>
+                                                        <SelectValue className="!ring-0 !ring-transparent"
+                                                                     placeholder={header.column.columnDef.header as string}/>
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectGroup>
                                                             <SelectLabel>Filter {header.column.columnDef.header as string}</SelectLabel>
-                                                            <SelectItem value="all">All</SelectItem>
+                                                            <SelectItem value="all">{header.column.columnDef.header as string} (all)</SelectItem>
                                                             {Array.from(header.column.getFacetedUniqueValues().keys()).map((value, key) => (
                                                                 <SelectItem value={value}>{value}</SelectItem>
                                                             ))}
                                                         </SelectGroup>
                                                     </SelectContent>
                                                 </Select>
-                                                </TableHead>
+                                            </TableHead>
                                     ))}
                                 </TableRow>
                             )
